@@ -4,14 +4,33 @@ contexts:
     require:
       - type
       - kind
-    # equals:
-    #   type: "Microsoft.SecurityInsights/dataConnectors"
+      - name
+      - properties.dcrConfig
+      - properties.auth
+      - properties.request
 
-  - name : typee
+
+  - name : type
     when: "exists('type')"
     equals:
       type: "Microsoft.SecurityInsights/dataConnectors"
       
+
+  - name : kind
+    when: "exists('kind')"
+    equals:
+      kind: 
+       - "Microsoft.SecurityInsights/dataConnectors"
+       - "GCP"
+       - "RestApiPoller"
+       - "HI"
+
+  - name : DCR config
+    when: "exists('properties.dcrConfig')"
+    require:
+      - properties.dcrConfig.dataCollectionEndpoint
+      - properties.dcrConfig.dataCollectionRuleImmutabled
+      - properties.dcrConfig.StreamName
 
   - name: RestApiPoller
     when: "exists('kind') and get('kind') == 'RestApiPoller'"
@@ -19,7 +38,8 @@ contexts:
       - properties.auth
       - properties.request
       - properties.response.eventsJsonPaths
-      - properties.response.format
+      - properties.resquest.apiEndpoint
+
 
     subcontexts:
       - name: OAuth2
@@ -46,6 +66,25 @@ contexts:
         # equals:
         #   properties.auth.UserName: "hi"
         #   properties.auth.Password: "hi"
+
+      - name: APIKey
+        when: "exists('properties.auth.type') and get('properties.auth.type') == 'APIKey'"
+        require:
+          - properties.auth.ApiKey
+          - properties.auth.ApiKeyName
+          - properties.auth.ApiKeyIdentifier
+
+      - name: JwtToken
+        when: "exists('properties.auth.type') and get('properties.auth.type') == 'JwtToken'"
+        require:
+          - properties.auth.username.key
+          - properties.auth.username.value
+          - properties.auth.password.key
+          - properties.auth.password.value
+          - properties.auth.TokenEndpoint
+          - properties.auth.IsJsonRequest
+
+      
 
   - name: GCP
     when: "exists('kind') and get('kind') == 'GCP'"
