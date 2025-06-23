@@ -1,0 +1,69 @@
+contexts:
+  - name: Root
+    when: "True"
+    require:
+      - type
+      - kind
+    # equals:
+    #   type: "Microsoft.SecurityInsights/dataConnectors"
+
+  - name : typee
+    when: "exists('type')"
+    equals:
+      type: "Microsoft.SecurityInsights/dataConnectors"
+      
+
+  - name: RestApiPoller
+    when: "exists('kind') and get('kind') == 'RestApiPoller'"
+    require:
+      - properties.auth
+      - properties.request
+      - properties.response.eventsJsonPaths
+      - properties.response.format
+
+    subcontexts:
+      - name: OAuth2
+        when: "exists('properties.auth.type') and get('properties.auth.type') == 'OAuth2'"
+        require:
+          - properties.auth.ClientId
+          - properties.auth.ClientSecret
+          - properties.auth.TokenEndpoint
+          - properties.auth.AuthorizationEndpoint
+
+        subcontexts:
+          - name: AuthorizationCodeGrant
+            when: "exists('properties.auth.GrantType') and get('properties.auth.GrantType') == 'authorization_code'"
+            require:
+              - properties.auth.Scope
+              - properties.auth.RedirectUri
+              - properties.auth.AuthorizationCode
+
+      - name: Basic
+        when: "exists('properties.auth.type') and get('properties.auth.type') == 'Basic'"
+        require:
+          - properties.auth.UserName
+          - properties.auth.Password
+        # equals:
+        #   properties.auth.UserName: "hi"
+        #   properties.auth.Password: "hi"
+
+  - name: GCP
+    when: "exists('kind') and get('kind') == 'GCP'"
+    require:
+      - properties.auth.serviceAccountEmail
+      - properties.auth.projectNumber
+      - properties.auth.workloadIdentityProviderId
+      - properties.response.projectId
+      - properties.response.subscriptionNames
+
+
+
+# Decide the “context” (when should this rule apply?).
+
+# If it’s top-level, add under contexts:; if it’s dependent, nest under a matching subcontexts: block.
+
+# Write when: using only exists('path') and get('path').
+
+# List required keys under require: (you get a “missing” error if they’re absent).
+
+# List exact‐value checks under equals: (you get an “expected vs actual” error).
